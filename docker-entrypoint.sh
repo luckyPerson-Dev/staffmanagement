@@ -11,7 +11,15 @@ if [ ! -f /var/www/html/config.php ]; then
     DB_NAME=${DB_NAME:-staff_management}
     DB_USER=${DB_USER:-staff_user}
     DB_PASS=${DB_PASS:-staff_password}
-    BASE_URL=${BASE_URL:-http://localhost}
+    
+    # Auto-detect BASE_URL from Render environment or use provided/default
+    if [ -n "$RENDER_EXTERNAL_URL" ]; then
+        BASE_URL=${BASE_URL:-$RENDER_EXTERNAL_URL}
+    elif [ -n "$BASE_URL" ]; then
+        BASE_URL=$BASE_URL
+    else
+        BASE_URL=${BASE_URL:-http://localhost}
+    fi
     
     # Update config.php with Docker values
     sed -i "s/define('DB_HOST', 'localhost');/define('DB_HOST', '${DB_HOST}');/" /var/www/html/config.php
