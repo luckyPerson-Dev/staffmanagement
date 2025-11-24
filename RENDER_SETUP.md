@@ -4,12 +4,16 @@
 
 Set these in your Render dashboard (Settings → Environment):
 
-### Required:
+### Option 1: Using DATABASE_URL (Recommended for PostgreSQL)
+- `DATABASE_URL` = `postgresql://dbpass_92kf3m1:O9ZL6oS5YUqZGky3EL2ufMwTYjdA71Db@dpg-d4i2tv95pdvs739i366g-a.oregon-postgres.render.com/dbpass_92kf3m1`
 - `BASE_URL` = `https://staffmanagement-bx2z.onrender.com`
-- `DB_HOST` = Your database host (if using Render PostgreSQL, use the internal hostname)
-- `DB_NAME` = Your database name
-- `DB_USER` = Your database user
-- `DB_PASS` = Your database password
+
+### Option 2: Using Individual Database Variables
+- `BASE_URL` = `https://staffmanagement-bx2z.onrender.com`
+- `DB_HOST` = `dpg-d4i2tv95pdvs739i366g-a.oregon-postgres.render.com`
+- `DB_NAME` = `dbpass_92kf3m1`
+- `DB_USER` = `dbpass_92kf3m1`
+- `DB_PASS` = `O9ZL6oS5YUqZGky3EL2ufMwTYjdA71Db`
 
 ### Optional:
 - `PORT` = (Automatically set by Render, don't override)
