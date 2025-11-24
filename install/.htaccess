@@ -1,0 +1,18 @@
+# Protect install directory from public access
+# Only allow access via CLI or with proper authentication
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Deny all direct access to PHP files in install directory
+    # Allow only CLI access
+    RewriteCond %{REQUEST_METHOD} !^CLI$
+    RewriteCond %{HTTP_HOST} !^$
+    RewriteRule ^(.*)$ - [F,L]
+</IfModule>
+
+# Alternative: Deny all access
+<IfModule !mod_rewrite.c>
+    Deny from all
+</IfModule>
+

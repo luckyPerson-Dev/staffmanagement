@@ -1,0 +1,70 @@
+# Staff Management System - .gitignore
+
+# Environment and configuration
+config.php
+.env
+.env.local
+
+# Logs
+logs/*
+*.log
+!logs/.htaccess
+
+# Uploads and user-generated content
+uploads/*
+!uploads/.htaccess
+!uploads/logo/
+!uploads/logo/*.png
+!uploads/contracts/.htaccess
+!uploads/documents/.htaccess
+
+# Downloads and exports
+downloads/*
+!downloads/.htaccess
+exports/*
+!exports/.htaccess
+
+# Storage
+storage/*
+!storage/.htaccess
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.project
+.classpath
+.settings/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# PHP
+vendor/
+composer.lock
+
+# Node modules (if any)
+node_modules/
+package-lock.json
+
+# Database dumps (keep migrations, ignore dumps)
+*.sql
+!migrations/*.sql
+
+

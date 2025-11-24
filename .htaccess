@@ -1,0 +1,47 @@
+# Staff Management System .htaccess
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Protect sensitive files
+<FilesMatch "^(config\.php|db_connect\.php|auth_helper\.php|helpers\.php|\.gitignore|\.env)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Protect core directory from direct access
+<IfModule mod_rewrite.c>
+    RewriteRule ^core/ - [F,L]
+</IfModule>
+
+# Set default timezone
+php_value date.timezone UTC
+
+# Error handling (production settings)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Custom Error Pages
+# Note: Paths are relative to the directory containing this .htaccess file
+ErrorDocument 404 error.php?code=404
+ErrorDocument 403 error.php?code=403
+ErrorDocument 500 error.php?code=500
+ErrorDocument 503 error.php?code=503
+
