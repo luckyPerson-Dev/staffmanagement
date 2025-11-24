@@ -54,9 +54,8 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Configure Apache for Render (supports dynamic PORT)
-RUN echo 'Listen ${PORT:-80}\n\
-<VirtualHost *:${PORT:-80}>\n\
+# Configure Apache (Render will handle PORT via environment)
+RUN echo '<VirtualHost *:80>\n\
     ServerAdmin webmaster@localhost\n\
     DocumentRoot /var/www/html\n\
     <Directory /var/www/html>\n\
@@ -68,12 +67,16 @@ RUN echo 'Listen ${PORT:-80}\n\
     CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
-# Create startup script to handle PORT environment variable
+# Create startup script to handle PORT environment variable for Render
 RUN echo '#!/bin/bash\n\
-# Render uses PORT environment variable\n\
-if [ -n "$PORT" ]; then\n\
-    sed -i "s/Listen.*/Listen $PORT/" /etc/apache2/sites-available/000-default.conf\n\
-    sed -i "s/<VirtualHost \*:.*>/<VirtualHost *:$PORT>/" /etc/apache2/sites-available/000-default.conf\n\
+set -e\n\
+# Render uses PORT environment variable - update Apache config if set\n\
+if [ -n "$PORT" ] && [ "$PORT" != "80" ]; then\n\
+    echo "Configuring Apache to listen on port $PORT"\n\
+    # Update Listen directive\n\
+    sed -i "s/^Listen 80/Listen $PORT/" /etc/apache2/ports.conf 2>/dev/null || echo "Listen $PORT" >> /etc/apache2/ports.conf\n\
+    # Update VirtualHost\n\
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost *:$PORT>/" /etc/apache2/sites-available/000-default.conf\n\
 fi\n\
 exec apache2-foreground' > /usr/local/bin/apache-start.sh && \
     chmod +x /usr/local/bin/apache-start.sh
