@@ -43,12 +43,12 @@ RUN mkdir -p /var/www/html/uploads /var/www/html/logs /var/www/html/storage /var
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
+# Copy entrypoint script first
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Copy application files
 COPY . /var/www/html/
-
-# Copy and set up entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
