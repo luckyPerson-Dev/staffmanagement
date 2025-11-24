@@ -9,51 +9,48 @@ else
     echo "config.php already exists, will update database settings..."
 fi
 
-# Parse DATABASE_URL if provided (PostgreSQL connection string from Render)
-if [ -n "$DATABASE_URL" ]; then
+# Priority: Individual DB_* variables > DATABASE_URL > defaults
+# Check if individual variables are set first (they take priority)
+if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASS" ]; then
+    echo "Using individual DB_* environment variables"
+    echo "DB_HOST=$DB_HOST, DB_NAME=$DB_NAME, DB_USER=$DB_USER"
+elif [ -n "$DATABASE_URL" ]; then
     echo "Found DATABASE_URL, parsing..."
     # Parse postgresql://user:password@host:port/database
     # Remove postgresql:// prefix
     DB_URL=$(echo "$DATABASE_URL" | sed 's|^postgresql://||')
     # Extract user (everything before first :)
-    DB_USER=$(echo "$DB_URL" | cut -d':' -f1)
+    DB_USER_PARSED=$(echo "$DB_URL" | cut -d':' -f1)
     # Extract password and host (everything after first :, before @)
     DB_PASS_AND_HOST=$(echo "$DB_URL" | cut -d':' -f2-)
-    DB_PASS=$(echo "$DB_PASS_AND_HOST" | cut -d'@' -f1)
+    DB_PASS_PARSED=$(echo "$DB_PASS_AND_HOST" | cut -d'@' -f1)
     # Extract host and database (everything after @)
     DB_HOST_AND_DB=$(echo "$DB_PASS_AND_HOST" | cut -d'@' -f2)
     # Extract host (before /, and remove port if present)
-    DB_HOST=$(echo "$DB_HOST_AND_DB" | cut -d'/' -f1 | cut -d':' -f1)
+    DB_HOST_PARSED=$(echo "$DB_HOST_AND_DB" | cut -d'/' -f1 | cut -d':' -f1)
     # Extract database name (after /)
-    DB_NAME=$(echo "$DB_HOST_AND_DB" | cut -d'/' -f2)
+    DB_NAME_PARSED=$(echo "$DB_HOST_AND_DB" | cut -d'/' -f2)
+    
+    # Use parsed values, but allow individual vars to override
+    DB_HOST=${DB_HOST:-$DB_HOST_PARSED}
+    DB_NAME=${DB_NAME:-$DB_NAME_PARSED}
+    DB_USER=${DB_USER:-$DB_USER_PARSED}
+    DB_PASS=${DB_PASS:-$DB_PASS_PARSED}
+    
     echo "Parsed DATABASE_URL: Host=$DB_HOST, Database=$DB_NAME, User=$DB_USER"
-fi
-
-# Use individual environment variables if set (they override DATABASE_URL parsing)
-if [ -n "$DB_HOST" ]; then
-    echo "Using DB_HOST from environment: $DB_HOST"
 else
+    echo "No DATABASE_URL or individual DB_* variables found, using defaults"
     DB_HOST=${DB_HOST:-db}
-    echo "Using default DB_HOST: $DB_HOST"
-fi
-
-if [ -n "$DB_NAME" ]; then
-    echo "Using DB_NAME from environment: $DB_NAME"
-else
     DB_NAME=${DB_NAME:-staff_management}
-fi
-
-if [ -n "$DB_USER" ]; then
-    echo "Using DB_USER from environment: $DB_USER"
-else
     DB_USER=${DB_USER:-staff_user}
-fi
-
-if [ -n "$DB_PASS" ]; then
-    echo "Using DB_PASS from environment (length: ${#DB_PASS})"
-else
     DB_PASS=${DB_PASS:-staff_password}
 fi
+
+# Final validation and defaults
+DB_HOST=${DB_HOST:-db}
+DB_NAME=${DB_NAME:-staff_management}
+DB_USER=${DB_USER:-staff_user}
+DB_PASS=${DB_PASS:-staff_password}
 
 echo "Final database config: Host=$DB_HOST, Database=$DB_NAME, User=$DB_USER"
 
@@ -74,26 +71,26 @@ DB_USER_ESCAPED=$(echo "$DB_USER" | sed 's/[[\.*^$()+?{|]/\\&/g')
 DB_PASS_ESCAPED=$(echo "$DB_PASS" | sed 's/[[\.*^$()+?{|]/\\&/g')
 BASE_URL_ESCAPED=$(echo "$BASE_URL" | sed 's/[[\.*^$()+?{|]/\\&/g')
 
-# Update DB_HOST (match any existing value)
-sed -i "s/define('DB_HOST', '[^']*');/define('DB_HOST', '${DB_HOST_ESCAPED}');/" /var/www/html/config.php || \
-    sed -i "s|define('DB_HOST', \"[^\"]*\");|define('DB_HOST', '${DB_HOST_ESCAPED}');|" /var/www/html/config.php || \
-    echo "define('DB_HOST', '${DB_HOST_ESCAPED}');" >> /var/www/html/config.php
-
-# Update DB_NAME
-sed -i "s/define('DB_NAME', '[^']*');/define('DB_NAME', '${DB_NAME_ESCAPED}');/" /var/www/html/config.php || \
-    sed -i "s|define('DB_NAME', \"[^\"]*\");|define('DB_NAME', '${DB_NAME_ESCAPED}');|" /var/www/html/config.php
-
-# Update DB_USER
-sed -i "s/define('DB_USER', '[^']*');/define('DB_USER', '${DB_USER_ESCAPED}');/" /var/www/html/config.php || \
-    sed -i "s|define('DB_USER', \"[^\"]*\");|define('DB_USER', '${DB_USER_ESCAPED}');|" /var/www/html/config.php
-
-# Update DB_PASS
-sed -i "s/define('DB_PASS', '[^']*');/define('DB_PASS', '${DB_PASS_ESCAPED}');/" /var/www/html/config.php || \
-    sed -i "s|define('DB_PASS', \"[^\"]*\");|define('DB_PASS', '${DB_PASS_ESCAPED}');|" /var/www/html/config.php
-
-# Update BASE_URL
-sed -i "s|define('BASE_URL', '[^']*');|define('BASE_URL', '${BASE_URL_ESCAPED}');|" /var/www/html/config.php || \
-    sed -i "s|define('BASE_URL', \"[^\"]*\");|define('BASE_URL', '${BASE_URL_ESCAPED}');|" /var/www/html/config.php
+# Update config.php - use perl for more reliable replacement
+perl -i -pe "
+    s/define\('DB_HOST',\s*'[^']*'\);/define('DB_HOST', '${DB_HOST_ESCAPED}');/g;
+    s/define\(\"DB_HOST\",\s*\"[^\"]*\"\);/define('DB_HOST', '${DB_HOST_ESCAPED}');/g;
+    s/define\('DB_NAME',\s*'[^']*'\);/define('DB_NAME', '${DB_NAME_ESCAPED}');/g;
+    s/define\(\"DB_NAME\",\s*\"[^\"]*\"\);/define('DB_NAME', '${DB_NAME_ESCAPED}');/g;
+    s/define\('DB_USER',\s*'[^']*'\);/define('DB_USER', '${DB_USER_ESCAPED}');/g;
+    s/define\(\"DB_USER\",\s*\"[^\"]*\"\);/define('DB_USER', '${DB_USER_ESCAPED}');/g;
+    s/define\('DB_PASS',\s*'[^']*'\);/define('DB_PASS', '${DB_PASS_ESCAPED}');/g;
+    s/define\(\"DB_PASS\",\s*\"[^\"]*\"\);/define('DB_PASS', '${DB_PASS_ESCAPED}');/g;
+    s|define\('BASE_URL',\s*'[^']*'\);|define('BASE_URL', '${BASE_URL_ESCAPED}');|g;
+    s|define\(\"BASE_URL\",\s*\"[^\"]*\"\);|define('BASE_URL', '${BASE_URL_ESCAPED}');|g;
+" /var/www/html/config.php 2>/dev/null || {
+    # Fallback: use sed with simpler patterns
+    sed -i "s|define('DB_HOST', '[^']*');|define('DB_HOST', '${DB_HOST_ESCAPED}');|g" /var/www/html/config.php
+    sed -i "s|define('DB_NAME', '[^']*');|define('DB_NAME', '${DB_NAME_ESCAPED}');|g" /var/www/html/config.php
+    sed -i "s|define('DB_USER', '[^']*');|define('DB_USER', '${DB_USER_ESCAPED}');|g" /var/www/html/config.php
+    sed -i "s|define('DB_PASS', '[^']*');|define('DB_PASS', '${DB_PASS_ESCAPED}');|g" /var/www/html/config.php
+    sed -i "s|define('BASE_URL', '[^']*');|define('BASE_URL', '${BASE_URL_ESCAPED}');|g" /var/www/html/config.php
+}
 
 echo "config.php updated with database settings"
 
