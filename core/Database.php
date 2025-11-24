@@ -22,7 +22,14 @@ class Database {
         }
         // Ensure password is a string (not null)
         $password = (string)$password;
-        $charset = DB_CHARSET;
+        $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
+        
+        // Detect database type (MySQL or PostgreSQL)
+        $db_type = defined('DB_TYPE') ? strtolower(DB_TYPE) : 'mysql';
+        // Auto-detect PostgreSQL if host contains 'postgres' or 'render.com'
+        if (stripos($host, 'postgres') !== false || stripos($host, 'render.com') !== false) {
+            $db_type = 'pgsql';
+        }
         
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -35,29 +42,39 @@ class Database {
         // For shared hosting, try multiple connection methods
         $connection_methods = [];
         
-        // Method 1: Use DB_HOST as-is (for shared hosting, often 'localhost' works)
-        $connection_methods[] = [
-            'host' => $host,
-            'dsn' => "mysql:host={$host};dbname={$db_name};charset={$charset}",
-            'description' => "Using DB_HOST as-is: {$host}"
-        ];
-        
-        // Method 2: If host is '127.0.0.1', try 'localhost' (common on shared hosting)
-        if (strtolower($host) === '127.0.0.1') {
+        if ($db_type === 'pgsql') {
+            // PostgreSQL connection
             $connection_methods[] = [
-                'host' => 'localhost',
-                'dsn' => "mysql:host=localhost;dbname={$db_name};charset={$charset}",
-                'description' => "Trying 'localhost' instead of '127.0.0.1'"
+                'host' => $host,
+                'dsn' => "pgsql:host={$host};dbname={$db_name};port=5432",
+                'description' => "PostgreSQL connection: {$host}"
             ];
-        }
-        
-        // Method 3: If host is 'localhost', try '127.0.0.1' (for some systems)
-        if (strtolower($host) === 'localhost') {
+        } else {
+            // MySQL connection methods
+            // Method 1: Use DB_HOST as-is (for shared hosting, often 'localhost' works)
             $connection_methods[] = [
-                'host' => '127.0.0.1',
-                'dsn' => "mysql:host=127.0.0.1;dbname={$db_name};charset={$charset}",
-                'description' => "Trying '127.0.0.1' instead of 'localhost'"
+                'host' => $host,
+                'dsn' => "mysql:host={$host};dbname={$db_name};charset={$charset}",
+                'description' => "Using DB_HOST as-is: {$host}"
             ];
+            
+            // Method 2: If host is '127.0.0.1', try 'localhost' (common on shared hosting)
+            if (strtolower($host) === '127.0.0.1') {
+                $connection_methods[] = [
+                    'host' => 'localhost',
+                    'dsn' => "mysql:host=localhost;dbname={$db_name};charset={$charset}",
+                    'description' => "Trying 'localhost' instead of '127.0.0.1'"
+                ];
+            }
+            
+            // Method 3: If host is 'localhost', try '127.0.0.1' (for some systems)
+            if (strtolower($host) === 'localhost') {
+                $connection_methods[] = [
+                    'host' => '127.0.0.1',
+                    'dsn' => "mysql:host=127.0.0.1;dbname={$db_name};charset={$charset}",
+                    'description' => "Trying '127.0.0.1' instead of 'localhost'"
+                ];
+            }
         }
         
         // Try each connection method

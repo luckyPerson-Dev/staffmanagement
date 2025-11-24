@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libicu-dev \
     libonig-dev \
+    libpq-dev \
     zip \
     unzip \
     curl \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) \
     pdo \
     pdo_mysql \
+    pdo_pgsql \
     mysqli \
     gd \
     zip \
