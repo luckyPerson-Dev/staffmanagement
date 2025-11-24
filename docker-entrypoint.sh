@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e
 
+echo "=== Docker Entrypoint Script Starting ==="
+echo "Environment variables check:"
+echo "  DATABASE_URL: ${DATABASE_URL:+SET (hidden)}"
+echo "  DB_HOST: ${DB_HOST:-NOT SET}"
+echo "  DB_NAME: ${DB_NAME:-NOT SET}"
+echo "  DB_USER: ${DB_USER:-NOT SET}"
+echo "  DB_PASS: ${DB_PASS:+SET (hidden)}"
+echo "  BASE_URL: ${BASE_URL:-NOT SET}"
+echo "  RENDER_EXTERNAL_URL: ${RENDER_EXTERNAL_URL:-NOT SET}"
+echo ""
+
 # Create or update config.php from config.example.php
 if [ ! -f /var/www/html/config.php ]; then
     echo "Creating config.php from config.example.php..."
@@ -93,6 +104,10 @@ perl -i -pe "
 }
 
 echo "config.php updated with database settings"
+echo ""
+echo "=== Verifying config.php updates ==="
+grep -E "define\('(DB_HOST|DB_NAME|DB_USER|DB_PASS|BASE_URL)'" /var/www/html/config.php | head -5 || echo "Warning: Could not verify config.php updates"
+echo ""
 
 # Ensure directories exist and have proper permissions
 mkdir -p /var/www/html/uploads /var/www/html/logs /var/www/html/storage /var/www/html/exports

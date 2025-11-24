@@ -26,8 +26,11 @@ class Database {
         
         // Detect database type (MySQL or PostgreSQL)
         $db_type = defined('DB_TYPE') ? strtolower(DB_TYPE) : 'mysql';
-        // Auto-detect PostgreSQL if host contains 'postgres' or 'render.com'
-        if (stripos($host, 'postgres') !== false || stripos($host, 'render.com') !== false) {
+        // Auto-detect PostgreSQL if host contains 'postgres', 'render.com', or 'oregon-postgres'
+        if (stripos($host, 'postgres') !== false || 
+            stripos($host, 'render.com') !== false || 
+            stripos($host, 'oregon-postgres') !== false ||
+            stripos($host, 'dpg-') !== false) {
             $db_type = 'pgsql';
         }
         
