@@ -11,11 +11,15 @@ services:
       - ./logs:/var/www/html/logs
       - ./storage:/var/www/html/storage
       - ./exports:/var/www/html/exports
-      - ./config.php:/var/www/html/config.php
     depends_on:
       - db
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
+      - DB_HOST=db
+      - DB_NAME=staff_management
+      - DB_USER=staff_user
+      - DB_PASS=staff_password
+      - BASE_URL=http://localhost:8080
     networks:
       - staff_network
 

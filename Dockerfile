@@ -46,13 +46,13 @@ RUN mkdir -p /var/www/html/uploads /var/www/html/logs /var/www/html/storage /var
 # Copy application files
 COPY . /var/www/html/
 
+# Copy and set up entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/uploads \
-    && chmod -R 777 /var/www/html/logs \
-    && chmod -R 777 /var/www/html/storage \
-    && chmod -R 777 /var/www/html/exports
+    && chmod -R 755 /var/www/html
 
 # Configure Apache
 RUN echo '<VirtualHost *:80>\n\
@@ -69,6 +69,9 @@ RUN echo '<VirtualHost *:80>\n\
 
 # Expose port 80
 EXPOSE 80
+
+# Use entrypoint script
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start Apache
 CMD ["apache2-foreground"]
